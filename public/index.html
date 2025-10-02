@@ -396,6 +396,37 @@ function resetTeacherPassword(){
 
 // Populate dropdowns on load
 populateGradeClass();
+// ---------- 🔹 Update School Info ----------
+function updateSchoolInfo() {
+    if(role !== 'admin') { 
+        alert('Only admins can update school info'); 
+        return; 
+    }
+
+    const schoolName = document.getElementById('schoolNameInput').value.trim();
+    const schoolLogoFile = document.getElementById('schoolLogoInput').files[0];
+
+    if(!schoolName && !schoolLogoFile) {
+        alert('Enter a new school name or select a logo to update.');
+        return;
+    }
+
+    // Update school name
+    if(schoolName) {
+        document.getElementById('schoolName').innerText = schoolName;
+    }
+
+    // Update school logo
+    if(schoolLogoFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('schoolLogo').src = e.target.result;
+        };
+        reader.readAsDataURL(schoolLogoFile);
+    }
+
+    alert('School info updated successfully!');
+}
 </script>
 
 </body>
