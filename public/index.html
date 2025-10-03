@@ -429,5 +429,84 @@ function updateSchoolInfo() {
 }
 </script>
 
+<!-- ======= ADDED SCRIPT (only added — nothing removed from original) ======= -->
+<script>
+(function(){
+  // Inject a message box under teacher form (only if not already present)
+  try {
+    const teacherForm = document.getElementById('teacherForm');
+    if (teacherForm && !document.getElementById('teacherLoginMessage')) {
+      const msg = document.createElement('div');
+      msg.id = 'teacherLoginMessage';
+      msg.style.marginTop = '8px';
+      msg.style.minHeight = '18px';
+      teacherForm.appendChild(msg);
+    }
+  } catch (e) {
+    console.error('Error injecting teacher login message box', e);
+  }
+
+  // Override loginTeacher with a safer async version (this does NOT remove original code; it simply replaces the function at runtime)
+  window.loginTeacher = async function() {
+    const emailEl = document.getElementById('teacherEmail');
+    const passEl = document.getElementById('teacherPassword');
+    const messageBox = document.getElementById('teacherLoginMessage');
+    const email = emailEl ? emailEl.value.trim() : '';
+    const password = passEl ? passEl.value.trim() : '';
+
+    if (messageBox) { messageBox.textContent = ''; messageBox.style.color = 'red'; }
+
+    if (!email || !password) {
+      if (messageBox) { messageBox.textContent = 'Fill all fields'; }
+      else alert('Fill all fields');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/login`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const text = await res.text();
+        console.error('Expected JSON, got:', text);
+        const displayText = res.status === 404 ? 'Server route not found (404)' : `Server error: ${res.status}`;
+        if (messageBox) messageBox.textContent = displayText;
+        else alert(displayText);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.error) {
+        if (messageBox) messageBox.textContent = data.error;
+        else alert(data.error);
+        return;
+      }
+
+      // successful login
+      teacherId = data.user.id;
+      teacherName = data.user.name;
+      role = 'teacher';
+      if (messageBox) { messageBox.style.color = 'green'; messageBox.textContent = `Welcome ${teacherName}!`; }
+      document.getElementById('currentUser').innerText = `Logged in as Teacher: ${teacherName}`;
+      document.getElementById('teacherControls').style.display='block';
+      document.getElementById('adminControls').style.display='none';
+      document.getElementById('studentAnnouncements').style.display='none';
+      document.getElementById('app').style.display='block';
+      document.getElementById('teacherForm').style.display='none';
+      if (typeof fetchTasks === 'function') fetchTasks();
+      if (typeof fetchAnnouncements === 'function') fetchAnnouncements();
+    } catch (err) {
+      console.error(err);
+      if (messageBox) messageBox.textContent = 'Error connecting to server';
+      else alert('Error connecting to server');
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
